@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Кассир-детектив</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-tap-highlight-color: transparent; }
+html, body {
+  background: #1a1a1a;
+  font-family: 'Courier New', monospace;
+  height: 100%;
+  overflow: hidden;
+  color: #eee;
+  touch-action: manipulation;
+}
+#game {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  max-width: 1000px;
+  max-height: 700px;
+  margin: 0 auto;
+  background: linear-gradient(#2a2a35, #1a1a22);
+  border: 2px solid #444;
+  overflow: hidden;
+}
+#counter {
+  position: absolute; bottom: 0; left: 0; width: 100%; height: 22%;
+  background: linear-gradient(#5a3a1a, #3a2410);
+  border-top: 4px solid #8a5a2a;
+}
+#client {
+  position: absolute;
+  bottom: 20%; left: 50%;
+  transform: translateX(-50%);
+  width: 40%; max-width: 220px;
+  height: 55%;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: flex-end;
+  transition: opacity 0.3s;
+}
+.head {
+  width: 45%; aspect-ratio: 1 / 1.1;
+  background: #e0b090;
+  border-radius: 45% 45% 40% 40%;
+  position: relative;
+  border: 2px solid #a07050;
+}
+.eye { position: absolute; top: 35%; width: 15%; aspect-ratio: 1; background: #222; border-radius: 50%; }
+.eye.l { left: 20%; } .eye.r { right: 20%; }
+.mouth { position: absolute; bottom: 18%; left: 50%; transform: translateX(-50%); width: 30%; height: 6%; background: #a05050; border-radius: 3px; }
+.body {
+  width: 70%; height: 55%;
+  background: #556;
+  border-radius: 20px 20px 0 0;
+  margin-top: -2%;
+  position: relative;
+}
+.arm { position: absolute; width: 22%; height: 80%; background: #e0b090; border-radius: 15px; top: 8%; }
+.arm.left { left: -18%; } .arm.right { right: -18%; }
+.tattoo {
+  position: absolute; width: 70%; aspect-ratio: 1;
+  background: radial-gradient(circle, #2a4 30%, #181 70%);
+  border-radius: 50%; border: 2px dashed #0a0;
+  display: none;
+  top: 20%; left: 15%;
+}
+#goods {
+  position: absolute; bottom: 22%; left: 50%;
+  transform: translateX(-50%);
+  display: flex; gap: 8px;
+  z-index: 3;
+}
+.good {
+  width: 44px; height: 44px;
+  background: #c84; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px;
+  box-shadow: 0 3px 0 #820;
+}
+  #speech {
+  position: absolute;
+  top: 55px; left: 50%;
+  transform: translateX(-50%);
+  width: 90%; max-width: 500px;
+  background: #f4f4e8;
+  color: #111;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 12px;
+  text-align: center;
+  display: none;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+  z-index: 8;
+  border: 2px solid #666;
+  line-height: 1.35;
+}
+#speech::after {
+  content: '';
+  position: absolute;
+  bottom: -10px; left: 50%;
+  transform: translateX(-50%);
+  border-width: 10px 10px 0;
+  border-style: solid;
+  border-color: #f4f4e8 transparent transparent;
+}
+#card {
+  position: absolute; left: 8px; top: 45px;
+  width: 120px;
+  background: #f4f4f4; color: #222;
+  border-radius: 8px; padding: 8px;
+  box-shadow: 0 0 15px #000;
+  font-size: 10px;
+  display: none;
+  z-index: 7;
+}
+#card h3 { font-size: 10px; text-align: center; margin-bottom: 4px; color: #333; }
+#cardPhoto {
+  width: 60px; height: 60px;
+  background: #ccd; margin: 0 auto 4px;
+  border: 2px solid #888;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px;
+}
+#cardName { font-weight: bold; font-size: 10px; text-align: center; margin-bottom: 3px; }
+#cardInfo { font-size: 9px; color: #555; text-align: center; }
+#computer {
+  position: absolute; right: 8px; top: 45px;
+  width: min(75%, 300px);
+  max-height: 65vh;
+  overflow-y: auto;
+  background: #0a0a12;
+  border: 2px solid #2a2a3a;
+  border-radius: 8px;
+  padding: 12px 10px;
+  display: none;
+  box-shadow: 0 0 25px #0af inset;
+  color: #0f0;
+  font-size: 11px;
+  z-index: 10;
+}
+#computer h3 { color: #0af; text-align: center; margin-bottom: 8px; font-size: 13px; }
+#compPhoto {
+  width: 70px; height: 70px;
+  background: #223; margin: 0 auto 8px;
+  border: 2px solid #0af;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 32px;
+}
+#compName { font-weight: bold; font-size: 12px; margin-bottom: 6px; text-align: center; }
+.compLine {
+  margin: 4px 0; padding: 4px 6px;
+  background: #111;
+  border-left: 3px solid #0af;
+  font-size: 10px;
+  line-height: 1.3;
+}
+#compClose {
+  position: absolute; top: 4px; right: 8px;
+  cursor: pointer; color: #f44;
+  font-size: 18px; font-weight: bold;
+  padding: 4px;
+}
+#barcode {
+  position: absolute; bottom: 24%; right: 12px;
+  width: 56px; height: 42px;
+  background: repeating-linear-gradient(90deg, #fff 0 2px, #000 2px 4px, #fff 4px 6px, #000 6px 9px);
+  border: 2px solid #fff;
+  cursor: pointer;
+  display: none;
+  z-index: 5;
+  border-radius: 4px;
+}
+#barcode:active { box-shadow: 0 0 15px #0f0; }
+  #actions {
+  position: absolute; bottom: 8px; left: 50%;
+  transform: translateX(-50%);
+  display: flex; gap: 8px;
+  z-index: 20;
+  width: 94%;
+  max-width: 400px;
+  justify-content: center;
+}
+#shootBtn, #serveBtn {
+  flex: 1;
+  padding: 12px 6px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  display: none;
+  font-family: inherit;
+  touch-action: manipulation;
+}
+#shootBtn { background: #c00; color: #fff; box-shadow: 0 0 15px #f00; }
+#serveBtn { background: #080; color: #fff; box-shadow: 0 0 15px #0f0; }
+#shootBtn:active { background: #f22; }
+#serveBtn:active { background: #0c0; }
+#hud {
+  position: absolute; top: 6px; right: 10px;
+  text-align: right; font-size: 12px;
+  z-index: 30;
+  line-height: 1.3;
+}
+#hud div { margin: 2px 0; }
+#message {
+  position: absolute; top: 40%; left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 20px; font-weight: bold;
+  text-align: center; z-index: 50; display: none;
+  padding: 16px 24px; border-radius: 10px;
+  background: rgba(0,0,0,0.9);
+  text-shadow: 0 0 10px currentColor;
+  max-width: 85%;
+  line-height: 1.3;
+}
+#startScreen, #gameOver {
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,0.95);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  z-index: 100; text-align: center;
+  padding: 16px;
+  overflow-y: auto;
+}
+#startScreen h1 { color: #0af; font-size: 20px; margin-bottom: 12px; text-shadow: 0 0 15px #0af; }
+#startScreen p { margin: 4px 0; font-size: 12px; color: #ccc; }
+#startScreen .rule {
+  color: #ffd; background: #222;
+  padding: 6px 10px; border-radius: 6px;
+  border-left: 3px solid #0af;
+  margin: 3px 0;
+  text-align: left; font-size: 11px;
+  width: 100%; max-width: 340px;
+  line-height: 1.3;
+}
+#gameOver h2 { color: #f44; font-size: 24px; margin-bottom: 12px; text-shadow: 0 0 15px #f44; }
+#gameOver p { margin: 4px 0; font-size: 13px; color: #ccc; }
+.btn {
+  margin-top: 16px;
+  padding: 12px 36px;
+  background: #0af; color: #000;
+  border: none; border-radius: 8px;
+  font-size: 16px; font-weight: bold;
+  cursor: pointer; font-family: inherit;
+  touch-action: manipulation;
+}
+.btn:active { background: #4cf; }
+.flash-red { animation: flashR 0.4s; }
+@keyframes flashR { 0%,100%{background:linear-gradient(#2a2a35,#1a1a22);} 50%{background:#600;} }
+.hit-anim { animation: hit 0.6s forwards; }
+@keyframes hit {
+  0% { transform: translateX(-50%) scale(1); opacity: 1; }
+  100% { transform: translateX(-50%) scale(0.4) translateY(60px); opacity: 0; }
+}
+@media (min-width: 700px) {
+  #client { width: 220px; height: 340px; bottom: 130px; }
+  .head { width: 90px; height: 100px; }
+  .good { width: 60px; height: 60px; font-size: 30px; }
+  #speech { font-size: 14px; padding: 12px 20px; }
+  #card { width: 190px; padding: 10px; font-size: 11px; top: 20px; left: 20px; }
+  #cardPhoto { width: 100px; height: 100px; font-size: 45px; }
+  #cardName { font-size: 12px; }
+  #cardInfo { font-size: 10px; }
+  #computer { font-size: 12px; top: 20px; right: 20px; padding: 15px; }
+  #compPhoto { width: 100px; height: 100px; font-size: 45px; }
+  #compName { font-size: 13px; }
+  .compLine { font-size: 11px; }
+  #barcode { width: 70px; height: 50px; right: 130px; }
+  #shootBtn, #serveBtn { font-size: 16px; padding: 12px 30px; flex: initial; }
+  #message { font-size: 28px; padding: 20px 40px; }
+  #startScreen h1 { font-size: 26px; }
+  #startScreen .rule { font-size: 12px; max-width: 600px; }
+  #hud { font-size: 14px; }
+}
+</style>
+</head>
+<body>
+<div id="game">
+  <div id="hud">
+    <div>Счёт: <span id="score">0</span></div>
+    <div>Жизни: <span id="lives">❤❤❤</span></div>
+    <div>Клиент: <span id="clientNum">1</span></div>
+  </div>
+
+  <div id="counter"></div>
+
+  <div id="client">
+    <div class="head">
+      <div class="eye l"></div>
+      <div class="eye r"></div>
+      <div class="mouth"></div>
+    </div>
+    <div class="body">
+      <div class="arm left"><div class="tattoo"></div></div>
+      <div class="arm right"><div class="tattoo"></div></div>
+    </div>
+  </div>
+
+  <div id="goods"></div>
+
+  <div id="speech"></div>
+
+  <div id="card">
+    <h3>📇 КАРТОЧКА</h3>
+    <div id="cardPhoto">👤</div>
+    <div id="cardName">—</div>
+    <div id="cardInfo">—</div>
+  </div>
+
+  <div id="barcode"></div>
+
+  <div id="computer">
+    <span id="compClose">✖</span>
+    <h3>💻 БАЗА ДАННЫХ</h3>
+    <div id="compPhoto">👤</div>
+    <div id="compName">—</div>
+    <div id="compData"></div>
+  </div>
+
+  <div id="actions">
+    <button id="shootBtn">🔫 СТРЕЛЯТЬ</button>
+    <button id="serveBtn">✅ ОБСЛУЖИТЬ</button>
+  </div>
+
+  <div id="message"></div>
+    <div id="startScreen">
+    <h1>🎯 КАССИР-ДЕТЕКТИВ</h1>
+    <p>Слушайте клиента и проверяйте базу (штрихкод).</p>
+    <div class="rule">🔍 <b>Монстр</b> — слова не совпадают с базой</div>
+    <div class="rule">✅ Совпало — «Обслужить»</div>
+    <div class="rule">🔫 Расхождение — «Стрелять»</div>
+    <div class="rule">💑 «Муж дома» — а в базе погиб</div>
+    <div class="rule">👃 «Не чувствую запахи» — а в базе чувствует</div>
+    <div class="rule">🖋 Тату не на той руке — монстр</div>
+    <button class="btn" id="startBtn">НАЧАТЬ</button>
+  </div>
+
+  <div id="gameOver" style="display:none;">
+    <h2>СМЕНА ОКОНЧЕНА</h2>
+    <p id="goReason">—</p>
+    <p>Счёт: <span id="goScore">0</span></p>
+    <button class="btn" id="restartBtn">ЗАНОВО</button>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const gameEl = $('game');
+const scoreEl = $('score'), livesEl = $('lives'), clientNumEl = $('clientNum');
+const cardEl = $('card'), cardPhoto = $('cardPhoto'), cardName = $('cardName'), cardInfo = $('cardInfo');
+const computerEl = $('computer'), compPhoto = $('compPhoto'), compName = $('compName'), compData = $('compData');
+const barcode = $('barcode');
+const shootBtn = $('shootBtn'), serveBtn = $('serveBtn');
+const messageEl = $('message');
+const goodsEl = $('goods'), clientEl = $('client');
+const speechEl = $('speech');
+const startScreen = $('startScreen'), gameOver = $('gameOver');
+const goReason = $('goReason'), goScore = $('goScore');
+
+const NAMES = [
+  "Иванов Иван Иванович","Петрова Мария Сергеевна","Сидоров Алексей Петрович",
+  "Кузнецова Ольга Николаевна","Смирнов Дмитрий Андреевич","Волкова Анна Викторовна",
+  "Морозов Сергей Владимирович","Новикова Елена Алексеевна","Козлов Павел Иванович",
+  "Соколова Татьяна Юрьевна","Лебедев Артём Олегович","Павлова Ирина Сергеевна"
+];
+const CITIES = ["Москва","Питер","Казань","Новосибирск","Екатеринбург","Омск","Самара","Уфа"];
+const CRIMES = ["Нет","Нет","Нет","Кража","Мошенничество","Нет","Хулиганство","Нет"];
+const ITEMS = ["🍕","🥤","🍎","🍞","🧀","🍫","🥫","🧴","🍌","🍩"];
+const EMOJIS = ["👨","👩","🧑","👴","👵","🧔","👨‍🦰","👩‍🦱","🧓","👱"];
+const JOBS = ["врач","учитель","инженер","безработный","программист","водитель","повар","студент"];
+
+const rnd = arr => arr[Math.floor(Math.random()*arr.length)];
+const chance = p => Math.random() < p;
+
+let state = {
+  score: 0, lives: 3, clientNum: 0,
+  currentClient: null, gameActive: false, busy: false
+};
+
+function sideText(s) {
+  if (s === 'left') return 'Татуировка: ЛЕВАЯ рука';
+  if (s === 'right') return 'Татуировка: ПРАВАЯ рука';
+  return 'Татуировка: ОТСУТСТВУЕТ';
+}
+function kidWord(n) {
+  if (n % 10 === 1 && n % 100 !== 11) return 'ребёнок';
+  if (n % 10 >= 2 && n % 10 <= 4 && (n%100 < 10 || n%100 >= 20)) return 'ребёнка';
+  return 'детей';
+}
+
+const FACT_TEMPLATES = [
+  () => {
+    const sides = ['left','right','none'];
+    const truth = rnd(sides);
+    let lie = rnd(sides.filter(s => s !== truth));
+    return {
+      key: 'tattoo',
+      truthSide: truth, lieSide: lie,
+      truthText: sideText(truth), lieText: sideText(lie)
+    };
+  },
+  () => {
+    const truth = chance(0.5) ? 'alive' : 'dead';
+    const lie = truth === 'alive' ? 'dead' : 'alive';
+    return {
+      key: 'spouse',
+      truthSpouse: truth, lieSpouse: lie,
+      truthText: truth === 'alive' ? 'Супруг(а) жив(а)' : 'Супруг(а) погиб(ла)',
+      lieText: truth === 'alive' ? '«Мой супруг(а) погиб(ла)»' : '«Мой супруг(а) дома сидит»'
+    };
+  },
+  () => {
+    const truth = chance(0.5);
+    return {
+      key: 'smell',
+      truthSmell: truth, lieSmell: !truth,
+      truthText: truth ? 'Чувствует запахи' : 'НЕ чувствует запахи',
+      lieText: truth ? '«Я не чувствую запахи»' : '«Я отлично чувствую запахи»'
+    };
+  },
+  () => {
+    const truth = Math.floor(Math.random()*4);
+    let lie = truth;
+    while (lie === truth) lie = Math.floor(Math.random()*4);
+    return {
+      key: 'kids',
+      truthKids: truth, lieKids: lie,
+      truthText: 'Детей: ' + truth,
+      lieText: `«У меня ${lie} ${kidWord(lie)}»`
+    };
+  },
+  () => {
+    const truth = rnd(JOBS);
+    let lie = rnd(JOBS);
+    while (lie === truth) lie = rnd(JOBS);
+    return {
+      key: 'job',
+      truthJob: truth, lieJob: lie,
+      truthText: 'Работа: ' + truth,
+      lieText: `«Я работаю ${lie}ом»`
+    };
+  },
+  () => {
+    const truthAge = 20 + Math.floor(Math.random()*50);
+    let lieAge = truthAge + (chance(0.5) ? 1 : -1) * (5 + Math.floor(Math.random()*15));
+    if (lieAge < 18) lieAge = truthAge + 10;
+    return {
+      key: 'age',
+      truthAge, lieAge,
+      truthText: 'Возраст: ' + truthAge,
+      lieText: `«Мне ${lieAge} лет»`
+    };
+  },
+  () => {
+    const truth = chance(0.5);
+    return {
+      key: 'allergy',
+      truthAllergy: truth, lieAllergy: !truth,
+      truthText: truth ? 'Аллергия: ЕСТЬ' : 'Аллергия: НЕТ',
+      lieText: truth ? '«У меня нет аллергии»' : '«У меня страшная аллергия»'
+    };
+  },
+  () => {
+    const truth = chance(0.5);
+    return {
+      key: 'vision',
+      truthVision: truth, lieVision: !truth,
+      truthText: truth ? 'Зрение: хорошее' : 'Зрение: плохое',
+      lieText: truth ? '«Я почти не вижу без очков»' : '«Я вижу идеально»'
+    };
+  },
+  () => {
+    const groups = ['I','II','III','IV'];
+    const truth = rnd(groups);
+    let lie = rnd(groups);
+    while (lie === truth) lie = rnd(groups);
+    return {
+      key: 'blood',
+      truthBlood: truth, lieBlood: lie,
+      truthText: 'Группа крови: ' + truth,
+      lieText: `«У меня ${lie} группа крови»`
+    };
+  }
+];
+  function generateClient() {
+  const name = rnd(NAMES);
+  const isMonster = chance(0.5);
+  const shuffled = [...FACT_TEMPLATES].sort(() => Math.random() - 0.5);
+  const factCount = chance(0.4) ? 2 : 1;
+  const facts = shuffled.slice(0, factCount).map(f => f());
+  const tattooFact = facts.find(f => f.key === 'tattoo');
+  let tattooSide = 'none';
+  if (tattooFact) {
+    tattooSide = isMonster ? tattooFact.lieSide : tattooFact.truthSide;
+  }
+  let speechLines = [];
+  let compLines = [];
+  facts.forEach(f => {
+    const says = isMonster ? f.lieText : f.truthText;
+    if (f.key === 'tattoo') {
+      speechLines.push(isMonster ? '«Да всё у меня в порядке...»' : '«Всё как в документах»');
+      compLines.push(f.truthText);
+    } else {
+      speechLines.push(says);
+      compLines.push(f.truthText);
+    }
+  });
+  if (speechLines.length === 0) speechLines.push('«Здравствуйте, вот документы.»');
+  return {
+    name, emoji: rnd(EMOJIS), city: rnd(CITIES), crime: rnd(CRIMES),
+    birth: `${Math.floor(Math.random()*28)+1}.${Math.floor(Math.random()*12)+1}.${Math.floor(Math.random()*30)+1970}`,
+    isMonster, facts, tattooSide,
+    speechLines, compLines,
+    items: [rnd(ITEMS), rnd(ITEMS), rnd(ITEMS)]
+  };
+}
+
+function showMessage(text, color, duration = 1200) {
+  messageEl.textContent = text;
+  messageEl.style.color = color;
+  messageEl.style.display = 'block';
+  setTimeout(() => { messageEl.style.display = 'none'; }, duration);
+}
+
+function updateHUD() {
+  scoreEl.textContent = state.score;
+  livesEl.textContent = '❤'.repeat(Math.max(0, state.lives)) + '🖤'.repeat(Math.max(0, 3 - state.lives));
+  clientNumEl.textContent = state.clientNum;
+}
+
+function renderClient() {
+  const c = state.currentClient;
+  if (!c) return;
+  document.querySelectorAll('.tattoo').forEach(t => t.style.display = 'none');
+  clientEl.classList.remove('hit-anim');
+  clientEl.style.opacity = '1';
+  if (c.tattooSide === 'left') {
+    document.querySelector('.arm.left .tattoo').style.display = 'block';
+  } else if (c.tattooSide === 'right') {
+    document.querySelector('.arm.right .tattoo').style.display = 'block';
+  }
+  goodsEl.innerHTML = c.items.map(i => `<div class="good">${i}</div>`).join('');
+  speechEl.innerHTML = c.speechLines.map(l => `<div>${l}</div>`).join('');
+  speechEl.style.display = 'block';
+}
+
+function openCard() {
+  const c = state.currentClient;
+  cardPhoto.textContent = c.emoji;
+  cardName.textContent = c.name;
+  cardInfo.textContent = `Город: ${c.city}`;
+  cardEl.style.display = 'block';
+}
+
+function openComputer() {
+  const c = state.currentClient;
+  compPhoto.textContent = c.emoji;
+  compName.textContent = c.name;
+  let html = '';
+  html += `<div class="compLine">📅 Дата рождения: ${c.birth}</div>`;
+  html += `<div class="compLine">🏙 Город: ${c.city}</div>`;
+  c.compLines.forEach(l => {
+    html += `<div class="compLine">${l}</div>`;
+  });
+  html += `<div class="compLine">🚔 Судимости: ${c.crime}</div>`;
+  compData.innerHTML = html;
+  computerEl.style.display = 'block';
+}
+
+function closeComputer() { computerEl.style.display = 'none'; }
+
+function nextClient() {
+  state.busy = false;
+  state.clientNum++;
+  updateHUD();
+  if (state.lives <= 0) { endGame("Вы потеряли все жизни!"); return; }
+  state.currentClient = generateClient();
+  cardEl.style.display = 'none';
+  computerEl.style.display = 'none';
+  speechEl.style.display = 'none';
+  shootBtn.style.display = 'none';
+  serveBtn.style.display = 'none';
+  barcode.style.display = 'none';
+  renderClient();
+  setTimeout(() => {
+    if (!state.gameActive) return;
+    openCard();
+    speechEl.style.display = 'block';
+    barcode.style.display = 'block';
+    shootBtn.style.display = 'block';
+    serveBtn.style.display = 'block';
+  }, 400);
+}
+
+function checkAction(action) {
+  if (state.busy || !state.gameActive) return;
+  const c = state.currentClient;
+  if (!c) return;
+  state.busy = true;
+  if (action === 'shoot') {
+    if (c.isMonster) {
+      state.score++;
+      showMessage("✅ МОНСТР УНИЧТОЖЕН!", "#0f0", 900);
+      clientEl.classList.add('hit-anim');
+      updateHUD();
+    } else {
+      state.lives--;
+      showMessage("❌ ЗАСТРЕЛИЛИ НЕВИНОВНОГО!", "#f44", 1200);
+      gameEl.classList.add('flash-red');
+      setTimeout(() => gameEl.classList.remove('flash-red'), 400);
+      updateHUD();
+    }
+  } else {
+    if (!c.isMonster) {
+      state.score++;
+      showMessage("✅ ОБСЛУЖЕН ВЕРНО", "#0f0", 900);
+      updateHUD();
+    } else {
+      state.lives--;
+      showMessage("💀 МОНСТР ПРОБРАЛСЯ!", "#f44", 1200);
+      gameEl.classList.add('flash-red');
+      setTimeout(() => gameEl.classList.remove('flash-red'), 400);
+      updateHUD();
+    }
+  }
+  cardEl.style.display = 'none';
+  computerEl.style.display = 'none';
+  speechEl.style.display = 'none';
+  barcode.style.display = 'none';
+  shootBtn.style.display = 'none';
+  serveBtn.style.display = 'none';
+  setTimeout(() => {
+    if (state.lives <= 0) endGame("Вы потеряли все жизни!");
+    else nextClient();
+  }, 1100);
+}
+
+function endGame(reason) {
+  state.gameActive = false;
+  goReason.textContent = reason;
+  goScore.textContent = state.score;
+  gameOver.style.display = 'flex';
+}
+
+function startGame() {
+  state = { score:0, lives:3, clientNum:0, currentClient:null, gameActive:true, busy:false };
+  startScreen.style.display = 'none';
+  gameOver.style.display = 'none';
+  updateHUD();
+  nextClient();
+}
+
+barcode.addEventListener('click', () => {
+  if (!state.gameActive) return;
+  if (computerEl.style.display === 'block') closeComputer();
+  else openComputer();
+});
+$('compClose').addEventListener('click', closeComputer);
+shootBtn.addEventListener('click', () => checkAction('shoot'));
+serveBtn.addEventListener('click', () => checkAction('serve'));
+$('startBtn').addEventListener('click', startGame);
+$('restartBtn').addEventListener('click', startGame);
+
+let touchStartX = 0;
+computerEl.addEventListener('touchstart', e => {
+  touchStartX = e.touches[0].clientX;
+}, { passive: true });
+computerEl.addEventListener('touchend', e => {
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  if (dx > 80) closeComputer();
+}, { passive: true });
+
+updateHUD();
+</script>
+</body>
+</html>
